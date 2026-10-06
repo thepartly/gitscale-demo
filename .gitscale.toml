@@ -1,0 +1,13 @@
+# The pins are written at bootstrap, once each release exists: see the demo
+# plan's Bootstrap. The root asks for the second application-a release, newer
+# than frontend's. shared-libs arrives through the applications.
+[repos]
+"imports/application-a" = { url = "https://github.com/thepartly/gitscale-demo-application-a.git", revision = "v1-2026.10.06-044447" }
+"imports/application-b" = { url = "https://github.com/thepartly/gitscale-demo-application-b.git", revision = "v1-2026.10.06-034348" }
+"imports/frontend"      = { url = "https://github.com/thepartly/gitscale-demo-frontend.git", revision = "v1-2026.10.06-050215" }
+"imports/compose"       = { url = "https://github.com/thepartly/gitscale-demo-compose.git", revision = "v1-2026.10.06-030811" }
+
+# The rendered deployment, as the root's artefact: one group, one layer, the
+# form Argo CD takes as an OCI source.
+[artefact]
+include = ["rendered/**"]

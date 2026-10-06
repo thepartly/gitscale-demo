@@ -1,0 +1,20 @@
+# What an Argo CD 3.1 or later would be given; the demo never applies it.
+# The demo environment: the latest release, which the root's release moves
+# the tag `released` to.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: oci://ghcr.io/thepartly/gitscale-demo/gitscale
+    targetRevision: released
+    path: rendered/demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo
+  syncPolicy:
+    automated: { prune: true }
+    syncOptions: [CreateNamespace=true]

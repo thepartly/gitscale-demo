@@ -1,0 +1,46 @@
+name: release
+on:
+  push:
+    branches: [main]
+concurrency: release
+permissions:
+  contents: write
+  packages: write
+env:
+  GITSCALE_REV: 0cb2dce3a3f488e13e4ab83cca10134d478b0477
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  ARTEFACT: ghcr.io/thepartly/gitscale-demo/gitscale
+jobs:
+  # Nothing is rendered: the last branch build, after git upgrade --commit,
+  # rendered every service at its release, so that render is released.
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-tags: true
+      - uses: actions/cache@v6
+        id: gitscale
+        with:
+          path: ~/.cargo/bin/git*
+          key: gitscale-${{ env.GITSCALE_REV }}
+      - if: steps.gitscale.outputs.cache-hit != 'true'
+        run: cargo install --git https://github.com/thepartly/gitscale --rev "$GITSCALE_REV" --locked
+      - run: gitscale sync
+      - uses: imjasonh/setup-crane@v0.7
+      # The version already on the commit, so a rerun releases it again;
+      # else a new one. The major is written here: v1.
+      - id: name
+        run: |
+          V=$(git tag --points-at HEAD 'v1-*' | head -n1)
+          [ -n "$V" ] || V="v1-$(date -u +%Y.%m.%d-%H%M%S)"
+          echo "release=$V" >> "$GITHUB_OUTPUT"
+      - env:
+          RELEASE: ${{ steps.name.outputs.release }}
+        run: |
+          gitscale artefact publish --reuse "$RELEASE"
+          # What the demo environment follows.
+          crane tag "$ARTEFACT:$RELEASE" released
+          # Last, so a commit is never released without its render.
+          git tag -f "$RELEASE"
+          git push origin "refs/tags/$RELEASE"

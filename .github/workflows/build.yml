@@ -1,0 +1,52 @@
+name: build
+on:
+  push:
+    branches-ignore: [main]
+permissions:
+  contents: read
+  packages: write
+  pull-requests: read
+env:
+  GITSCALE_REV: 0cb2dce3a3f488e13e4ab83cca10134d478b0477
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  ARTEFACT: ghcr.io/thepartly/gitscale-demo/gitscale
+  # One kustomize for every render: the same sources must render the same.
+  KUSTOMIZE_VERSION: 5.7.1
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        id: gitscale
+        with:
+          path: ~/.cargo/bin/git*
+          key: gitscale-${{ env.GITSCALE_REV }}
+      - if: steps.gitscale.outputs.cache-hit != 'true'
+        run: cargo install --git https://github.com/thepartly/gitscale --rev "$GITSCALE_REV" --locked
+      - run: gitscale sync
+      - uses: imjasonh/setup-crane@v0.7
+      - run: |
+          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$KUSTOMIZE_VERSION/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" |
+            sudo tar -xz -C /usr/local/bin kustomize
+      # The label render:allow-released on the branch's pull request; added
+      # later, it needs this build run again.
+      - id: label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          labels=$(gh pr list --head "$GITHUB_REF_NAME" --state open --json labels \
+            --jq '.[].labels[].name' || true)
+          if grep -qx 'render:allow-released' <<<"$labels"; then
+            echo "options=--allow-released" >> "$GITHUB_OUTPUT"
+          fi
+      - run: ./render.sh ${{ steps.label.outputs.options }}
+      - run: gitscale artefact publish
+      # What a preview follows: the tag Argo CD's pull-request generator
+      # names as topic-{{.branch_slug}}, lower case, runs of anything else
+      # as -, at most 50 characters.
+      - run: |
+          hash=$(gitscale hash | cut -d' ' -f1)
+          slug=$(printf '%s' "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' |
+            sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-50 | sed -E 's/-+$//')
+          crane tag "$ARTEFACT:$hash" "topic-$slug"

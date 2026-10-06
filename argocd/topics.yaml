@@ -1,0 +1,39 @@
+# What an Argo CD 3.1 or later would be given; the demo never applies it.
+# A preview per open pull request of the root, following the tag its build
+# moves, topic-<branch slug>, in its own namespace and host.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: gitscale-demo-topics
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - pullRequest:
+        github:
+          owner: thepartly
+          repo: gitscale-demo
+        requeueAfterSeconds: 60
+  template:
+    metadata:
+      name: 'topic-{{.number}}'
+    spec:
+      project: default
+      source:
+        repoURL: oci://ghcr.io/thepartly/gitscale-demo/gitscale
+        targetRevision: 'topic-{{.branch_slug}}'
+        path: rendered/demo
+        kustomize:
+          patches:
+            - target:
+                kind: Ingress
+              patch: |-
+                - op: replace
+                  path: /spec/rules/0/host
+                  value: topic-{{.number}}.example.com
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'topic-{{.number}}'
+      syncPolicy:
+        automated: { prune: true }
+        syncOptions: [CreateNamespace=true]

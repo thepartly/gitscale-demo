@@ -1,0 +1,22 @@
+name: check
+on: pull_request
+permissions:
+  contents: read
+  packages: read
+env:
+  GITSCALE_REV: 0cb2dce3a3f488e13e4ab83cca10134d478b0477
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        id: gitscale
+        with:
+          path: ~/.cargo/bin/git*
+          key: gitscale-${{ env.GITSCALE_REV }}
+      - if: steps.gitscale.outputs.cache-hit != 'true'
+        run: cargo install --git https://github.com/thepartly/gitscale --rev "$GITSCALE_REV" --locked
+      - run: gitscale sync
+      - run: gitscale check
