@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# argocd/sync.sh demo
+# argocd/sync.sh demo [<release>]
 # argocd/sync.sh topic <branch> [<pull request>]
 #
 # A fake Argo CD sync of an Application in argocd/: the artefact it follows,
 # unpacked and printed, and the manifests it would apply. It touches no
 # cluster.
 #
-# demo: argocd/demo.yaml, the latest release.
+# demo: argocd/demo.yaml, the latest release; or <release>, as a rollback
+# to it would.
 # topic: argocd/topics.yaml's preview of the root's pull request from
 # <branch>; without its number, gh looks the open one up.
 set -euo pipefail
@@ -14,7 +15,7 @@ self=$(readlink -f "${BASH_SOURCE[0]}")
 cd "$(dirname "$self")"
 
 usage() {
-    sed -n '2,12s/^# \{0,1\}//p' "$self"
+    sed -n '2,13s/^# \{0,1\}//p' "$self"
 }
 
 error() {
@@ -24,7 +25,7 @@ error() {
 
 case ${1-} in
 demo)
-    (($# == 1)) || {
+    (($# == 1 || $# == 2)) || {
         usage >&2
         exit 2
     }
@@ -51,6 +52,7 @@ done
 if [ "$1" = demo ]; then
     name=$(yq '.metadata.name' demo.yaml)
     spec=$(yq -o=json '.spec' demo.yaml)
+    [ -z "${2-}" ] || spec=$(jq --arg release "$2" '.source.targetRevision = $release' <<<"$spec")
 else
     branch=$2
     # The slug of Argo CD's pull-request generator, as the root's build tags

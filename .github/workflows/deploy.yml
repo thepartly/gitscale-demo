@@ -1,17 +1,11 @@
 name: deploy
 # A fake deploy: what Argo CD would sync for an Application in argocd/, the
 # artefact it follows unpacked and printed. It touches no cluster.
-on:
-  workflow_dispatch:
-    inputs:
-      application:
-        description: demo, the latest release; or topic, a pull request's preview
-        type: choice
-        options: [demo, topic]
-        default: demo
-      branch:
-        description: For topic, the root's branch of the pull request
-        type: string
+#
+# Run from the default branch, it is the demo, the latest release; from a
+# release's tag, the demo at that release; from any other branch, that
+# topic's preview, the pull request from the branch.
+on: workflow_dispatch
 permissions:
   contents: read
   packages: read
@@ -30,13 +24,13 @@ jobs:
           curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$KUSTOMIZE_VERSION/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" |
             sudo tar -xz -C /usr/local/bin kustomize
       - env:
-          APPLICATION: ${{ inputs.application }}
-          BRANCH: ${{ inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "$APPLICATION" = topic ]; then
-            [ -n "$BRANCH" ] || { echo "::error::topic needs a branch"; exit 1; }
-            ./argocd/sync.sh topic "$BRANCH"
-          else
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            ./argocd/sync.sh demo "$GITHUB_REF_NAME"
+          elif [ "$GITHUB_REF_NAME" = "$DEFAULT_BRANCH" ]; then
             ./argocd/sync.sh demo
+          else
+            ./argocd/sync.sh topic "$GITHUB_REF_NAME"
           fi
