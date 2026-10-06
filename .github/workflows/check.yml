@@ -4,7 +4,7 @@ permissions:
   contents: read
   packages: read
 env:
-  GITSCALE_REV: 0cb2dce3a3f488e13e4ab83cca10134d478b0477
+  GITSCALE_REV: 94e66fc3faeecf049f61d193e8b44db86ebc3a99
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   check:
