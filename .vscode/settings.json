@@ -1,0 +1,10 @@
+{
+  // gitscale checks sub-repositories out at imports/<name>; the default scan
+  // depth of 1 only finds the root repo, so the imports never show up in the
+  // Source Control view until a file inside one is opened.
+  "git.repositoryScanMaxDepth": 2,
+  // A checkout's own imports are links to the shared ones (imports/frontend/
+  // imports/application-a -> ../../application-a); following them repeats
+  // every file once per repository that imports it.
+  "search.followSymlinks": false
+}

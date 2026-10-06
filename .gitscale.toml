@@ -2,9 +2,9 @@
 # plan's Bootstrap. The root asks for the second application-a release, newer
 # than frontend's. shared-libs arrives through the applications.
 [repos]
-"imports/application-a" = { url = "https://github.com/thepartly/gitscale-demo-application-a.git", revision = "v1-2026.10.06-044447" }
-"imports/application-b" = { url = "https://github.com/thepartly/gitscale-demo-application-b.git", revision = "v1-2026.10.06-034348" }
-"imports/frontend"      = { url = "https://github.com/thepartly/gitscale-demo-frontend.git", revision = "v1-2026.10.06-050215" }
+"imports/application-a" = { url = "https://github.com/thepartly/gitscale-demo-application-a.git", revision = "v1-2026.10.06-071417" }
+"imports/application-b" = { url = "https://github.com/thepartly/gitscale-demo-application-b.git", revision = "v1-2026.10.06-071447" }
+"imports/frontend"      = { url = "https://github.com/thepartly/gitscale-demo-frontend.git", revision = "v1-2026.10.06-072434" }
 "imports/compose"       = { url = "https://github.com/thepartly/gitscale-demo-compose.git", revision = "v1-2026.10.06-053650" }
 
 # The rendered deployment, as the root's artefact: one group, one layer, the

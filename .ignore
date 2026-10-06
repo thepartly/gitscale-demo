@@ -1,0 +1,5 @@
+# gitscale lists the imported sub-repositories in .git/info/exclude so the root
+# repo does not track them. That also hides them from ripgrep-based search (VS
+# Code search and quick open, rg, fd). A .ignore outranks git's ignore rules, so
+# this re-includes them; each import's own .gitignore still applies inside it.
+!/imports/*/
